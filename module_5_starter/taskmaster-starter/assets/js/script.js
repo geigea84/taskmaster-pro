@@ -93,6 +93,65 @@ $(".list-gorup").on("blur", "textarea", function () {
   $(this).replaceWith(taskP);
 });
 
+//5.1.7 Due dates are wrapped in <span> elements that are children of the same .list-group, 
+//meaning we can delegate the click the same way we did for <p> elements
+//due date was clicked
+$(".list-group").on("click", "span", function() {
+  //get current text
+  var date = $(this)
+    .text()
+    .trim();
+
+  //create new input element
+  var dateInput = $("<input>")
+    .attr("type", "text")
+    .addClass("form-control")
+    .val(date);
+
+  //swap out elements
+  $(this).replaceWith(dateInput);
+
+  //automatically focus on new element
+  dateInput.trigger("focus");
+  
+  //The main difference here is that we're creating an <input> element and using jQuery's 
+  //attr() method to set it as type="text". In jQuery, attr() can serve two purposes. 
+  //With one argument, it gets an attribute (e.g., attr("id")). With two arguments, 
+  //it sets an attribute (e.g., attr("type", "text"))
+});
+
+//5.1.7 Next, we'll convert them back when the user clicks outside (i.e., when the element's blur event occurs).
+//value of due date was changed
+$(".list-group").on("blur", "input[type='text']", function() {
+  //get current text
+  var date = $(this)
+    .val()
+    .trim();
+
+  //get the parent ul's id attribute
+  var status = $(this)
+    .closest(".list-group")
+    .attr("id")
+    .replace("list-", "");
+
+  //get the task's position in the list of other li elements
+  var index = $(this)
+    .closest(".list-group-item")
+    .index();
+
+  //update task in array and re-save to localstorage
+  tasks[status][index].date = date;
+  saveTasks();
+
+  //recreate span element with bootstrap classes
+  var taskSpan = $("<span>")
+    .addClass("badge badge-primary badge-pill")
+    .text(date);
+
+  //replace input with span element
+  $(this).replaceWith(taskSpan);
+});
+
 // modal was triggered
 $("#task-form-modal").on("show.bs.modal", function () {
   // clear values
