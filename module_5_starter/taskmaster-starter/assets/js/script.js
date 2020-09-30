@@ -93,6 +93,97 @@ $(".list-gorup").on("blur", "textarea", function () {
   $(this).replaceWith(taskP);
 });
 
+//5.3.5 Let's try turning the columns in Taskmaster into sortables. 
+//Keep in mind that the actual lists we want to become sortable are 
+//the <ul> elements with the class list-group. We'll use a jQuery selector 
+//to find all list-group elements and then call a new jQuery UI method on them.
+$(".card .list-group").sortable({
+  connectWith: $(".card .list-group"),
+  scroll: false,
+  tolerance: "pointer",
+  helper: "clone",
+  activate: function(event) {
+    console.log("activate", this);
+  },
+  deactivate: function(event) {
+    console.log("deactivate", this);
+  },
+  over: function(event) {
+    console.log("over", event.target);
+  },
+  out: function(event) {
+    console.log("out", event.target);
+  },
+  //5.3.5 jQuery's each() method will run a callback function for every item/element in the array. 
+  //It's another form of looping, except that a function is now called on each loop iteration. 
+  //The potentially confusing part of this code is the second use of $(this). 
+  //Inside the callback function, $(this) actually refers to the child element at that index.
+  update: function(event) {
+    //array to store the task data in
+    var tempArr = [];
+
+    // loop over current set of children in sortable list
+    $(this).children().each(function() {
+      var text = $(this)
+        .find("p")
+        .text()
+        .trim();
+
+      var date = $(this)
+        .find("span")
+        .text()
+        .trim();
+
+      //add task data to the temp array as an object
+      tempArr.push({
+        text: text,
+        date: date
+      });
+    });
+    //5.3.5 trim down list's ID to match object property
+    var arrName = $(this)
+      .attr("id")
+      .replace("list-", "");
+
+    //update array on tasks object and save
+    tasks[arrName] = tempArr;
+    saveTasks();
+
+    console.log(tempArr);
+  }
+  //5.3.5 This is another example of scoped variables. Remember, if an inner function declares a 
+  //variable with the same name as a variable declared outside, the inner function will 
+  //use the closer of the two declarations. A similar situation would look like this:
+
+    //var name = "Bob";
+
+    //var sayName = function() {
+    //var name = "Alice";
+    //console.log(name);
+    //};
+
+    //sayName(); //prints "Alice"
+
+    //console.log(name); // prints "Bob"
+  
+});
+
+//5.3.6
+$("#trash").droppable({
+  accept: ".card .list-group-item",
+  tolerance: "touch",
+  drop: function(event, ui) {
+    ui.draggable.remove();
+    console.log("drop");
+  },
+  over: function(event, ui) {
+    console.log("over");
+  },
+  out: function(event, ui) {
+    console.log("out");
+  }
+});
+
 //5.1.7 Due dates are wrapped in <span> elements that are children of the same .list-group, 
 //meaning we can delegate the click the same way we did for <p> elements
 //due date was clicked
@@ -114,7 +205,7 @@ $(".list-group").on("click", "span", function() {
   //automatically focus on new element
   dateInput.trigger("focus");
   
-  //The main difference here is that we're creating an <input> element and using jQuery's 
+  //5.1.7 The main difference here is that we're creating an <input> element and using jQuery's 
   //attr() method to set it as type="text". In jQuery, attr() can serve two purposes. 
   //With one argument, it gets an attribute (e.g., attr("id")). With two arguments, 
   //it sets an attribute (e.g., attr("type", "text"))
