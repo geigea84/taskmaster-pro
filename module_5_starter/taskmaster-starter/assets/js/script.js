@@ -13,6 +13,8 @@ var createTask = function (taskText, taskDate, taskList) {
   // append span and p element to parent li
   taskLi.append(taskSpan, taskP);
 
+  //.5.4.6 check due date
+  auditTask(taskLi);
 
   // append to ul list on the page
   $("#list-" + taskList).append(taskLi);
@@ -184,6 +186,13 @@ $("#trash").droppable({
   }
 });
 
+//5.4.4 add calendar to dates
+//When and where do we need to add the .datepicker() method to a due date edit <input> element?
+//In the click event listener we added to any <span> element in .list-group to create a date <input> element.
+$("#modalDueDate").datepicker({
+  minDate: 1
+});
+
 //5.1.7 Due dates are wrapped in <span> elements that are children of the same .list-group, 
 //meaning we can delegate the click the same way we did for <p> elements
 //due date was clicked
@@ -202,6 +211,18 @@ $(".list-group").on("click", "span", function() {
   //swap out elements
   $(this).replaceWith(dateInput);
 
+  //5.4.4 enable jquery ui datepicker
+  //Per the documentation, the onClose option for .datepicker() allows us to execute a function when the 
+  //date picker closes. It may close when a user clicks anywhere on the page outside the date picker, so 
+  //we need to capture that event and change the date picker back to its original <span> element.
+  dateInput.datepicker({
+    minDate: 1,
+    onClose: function() {
+      //when calendar is closed, force a "change" event on the `dateInput`
+      $(this),trigger("change");
+    }
+  });
+
   //automatically focus on new element
   dateInput.trigger("focus");
   
@@ -211,9 +232,64 @@ $(".list-group").on("click", "span", function() {
   //it sets an attribute (e.g., attr("type", "text"))
 });
 
+{
+//5.4.5 Moment.js can help us parse dates just like with JavaScript, but then we can manipulate that data more 
+//easily than with regular JavaScript. For instance, adding two days to the current time is as easy as running this code:
+
+//var twoDaysFromNow = moment().add(2, "days");
+//To compare, here's how to do the same thing using regular JavaScript:
+
+// get current date
+//var currentDate = new Date();
+
+// set how many days from now we want
+//var daysFromNow = 2;
+
+// get date two days from now
+//var twoDaysFromNow = new Date(currentDate.setDate(currentDate.getDate() + daysFromNow));
+}
+
+//5.4.6 Because we need to run this type of functionality in the functions for both creating tasks 
+//and editing task due dates, we should create a separate function for it, called auditTask, and 
+//set it up to accept the task's <li> element as a parameter. This way we can add classes to it if need be.
+
+//5.4.6 First, we use the date variable we created from taskEl to make a new Moment object, configured for 
+//the user's local time using moment(date, "L"). Because the date variable does not specify a time of day 
+//(for example, "11/23/2019"), the Moment object will default to 12:00am. Because work usually doesn't end 
+//at 12:00am, we convert it to 5:00pm of that day instead, using the .set("hour", 17) method.
+var auditTask = function(taskEl) {
+  //get date from task element
+  var date = $(taskEl).find("span").text().trim();
+
+  //convert to moment object at 5:00pm
+  var time = moment(date, "L").set("hour", 17);
+
+  //remove any old classes from element
+  $(taskEl).removeClass("list-group-item-warning list-group-item-danger");
+
+  //apply new class if task is near/over due date
+  if (moment().isAfter(time)) {
+    $(taskEl).addClass("list-group-item-danger");
+  }
+  //Moment.js functions literally perform left to right. So when we use moment() to get right now and use .diff() 
+  //afterwards to get the difference of right now to a day in the future, we'll get a negative number back. 
+  //This can be hard to work with, because we have to check if the difference is >= -2, which can be hard to conceptualize.
+  //In our code, we're preventing any confusion by testing for a number less than +2, not a number greater than -2. 
+  //To do this, we've wrapped the returning value of the moment.diff() in the JavaScript Math object's .abs() method. 
+  //This ensures we're getting the absolute value of that number.
+  else if (Math.abs(moment().diff(time, "days")) <= 2) {
+    $(taskEl).addClass("list-group-item-warning");
+  }
+
+  //5.4.6 Now, when a task element is sent into the auditTask() function, we can get the date information 
+  //and parse it into a Moment object using Moment.js. We use jQuery to select the taskEl element and find 
+  //the <span> element inside it, then retrieve the text value using .text(). We chained on a JavaScript 
+  //(not jQuery) .trim() method to cut off any possible leading or trailing empty spaces.
+};
+
 //5.1.7 Next, we'll convert them back when the user clicks outside (i.e., when the element's blur event occurs).
 //value of due date was changed
-$(".list-group").on("blur", "input[type='text']", function() {
+$(".list-group").on("change", "input[type='text']", function() {
   //get current text
   var date = $(this)
     .val()
@@ -238,6 +314,9 @@ $(".list-group").on("blur", "input[type='text']", function() {
   var taskSpan = $("<span>")
     .addClass("badge badge-primary badge-pill")
     .text(date);
+
+  //pass task's <li> element into auditTask() to check new due date
+  auditTask($(taskSpan).closest(".list-group-item"));
 
   //replace input with span element
   $(this).replaceWith(taskSpan);
