@@ -99,21 +99,31 @@ $(".list-gorup").on("blur", "textarea", function () {
 //Keep in mind that the actual lists we want to become sortable are 
 //the <ul> elements with the class list-group. We'll use a jQuery selector 
 //to find all list-group elements and then call a new jQuery UI method on them.
+
+//5.5.7 Change and add/remove class types depending on whether you're activating the element or not
 $(".card .list-group").sortable({
   connectWith: $(".card .list-group"),
   scroll: false,
   tolerance: "pointer",
   helper: "clone",
   activate: function(event) {
-    console.log("activate", this);
+    $(this).addClass("dropover");
+    $(".bottom-trash").addClass("bottom-trash-drag");
+    console.log("activate", $(this));
   },
   deactivate: function(event) {
+    $(this).removeClass("dropover");
+    $(".bottom-trash").removeClass("bottom-trash-drag");
     console.log("deactivate", this);
   },
   over: function(event) {
+    $(event.target).addClass("dropover-active");
+    $(".bottom-trash").addClass("bottom-trash-active");
     console.log("over", event.target);
   },
   out: function(event) {
+    $(event.target).removeClass("dropover-active");
+    $(".bottom-trash").removeClass("bottom-trash-active");
     console.log("out", event.target);
   },
   //5.3.5 jQuery's each() method will run a callback function for every item/element in the array. 
@@ -219,7 +229,7 @@ $(".list-group").on("click", "span", function() {
     minDate: 1,
     onClose: function() {
       //when calendar is closed, force a "change" event on the `dateInput`
-      $(this),trigger("change");
+      $(this).trigger("change");
     }
   });
 
@@ -335,7 +345,7 @@ $("#task-form-modal").on("shown.bs.modal", function () {
 });
 
 // save button in modal was clicked
-$("#task-form-modal .btn-primary").click(function () {
+$("#task-form-modal .btn-save").click(function () {
   // get form values
   var taskText = $("#modalTaskDescription").val();
   var taskDate = $("#modalDueDate").val();
@@ -368,4 +378,25 @@ $("#remove-tasks").on("click", function () {
 // load tasks for the first time
 loadTasks();
 
+//5.5.4 The user can still interact with the application while these timers are 
+//running because they are asynchronous functions. This means they run in the 
+//background until their time is up and then execute the callback function, 
+//allowing us to still use the other functionality in the app as usual.
 
+//5.5.4 Here, the jQuery selector passes each element it finds using the selector into the callback function, 
+//and that element is expressed in the el argument of the function.auditTask() then passes the element to 
+//its routines using the el argument.
+//In this interval, we loop over every task on the page with a class of list-group-item and execute the 
+//auditTask() function to check the due date of each one.
+setInterval(function() {
+  $(".card .list-group-item").each(function(index, el) {
+    auditTask(el);
+  });
+}, 1800000);
+
+//It can be hard to come up with longer time durations in milliseconds, 
+//so a good trick to make this easier is to convert the time to something like this:
+
+//setInterval(function() {
+  // code to execute
+//}, (1000 * 60) * 30);
